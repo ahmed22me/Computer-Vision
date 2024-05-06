@@ -11,12 +11,11 @@ from sklearn.utils import shuffle
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 
+
 global train_data
 global train_labels
 global validation_data
 global validation_labels
-global model
-model = SVC(kernel="linear", C = 0.7)
 
 train_data = []
 train_labels = []
@@ -47,13 +46,13 @@ def calculate_similarity(img_1_path, img_2_path):
 
     return similarity[0][0]
 # Use HoG features for classification
-def classify_image(img_path):
-    features = extract_features(img_path)
-
-    # Predict category using the trained model
-    predicted_label = model.predict([features])[0]
-
-    label_result["text"] = f"Predicted Category: {predicted_label}"
+# def classify_image(img_path):
+#     features = extract_features(img_path)
+#
+#     # Predict category using the trained model
+#     predicted_label = model.predict([features])[0]
+#
+#     label_result["text"] = f"Predicted Category: {predicted_label}"
 
 def browse_file():
     # Open file selection dialog
@@ -65,47 +64,70 @@ def browse_file():
 
 
 
-# #############
-# train_data = np.array(train_data)
-# train_labels = np.array(train_labels)
-
-# indices = np.arange(len(train_data))
-# np.random.shuffle(indices)
-# train_labels = train_data[indices]
-# train_labels = train_labels[indices]
-# #############
-
 
 def calculate_accuracy():
-    
+    # Shuffle the training data and labels
     train_data_sh, train_labels_sh = shuffle(train_data, train_labels, random_state=42)
 
-    model.fit(train_data_sh, train_labels_sh)
+    # Train SVM model and evaluate with cross-validation
+    svm_model = SVC(kernel="linear", C=0.7)
+    svm_train_accuracy = np.mean(cross_val_score(svm_model, train_data_sh, train_labels_sh, cv=5))
 
+    # Train Random Forest model and evaluate with cross-validation
+    rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+    rf_train_accuracy = np.mean(cross_val_score(rf_model, train_data_sh, train_labels_sh, cv=5))
 
-    train_predictions = model.predict(train_data_sh)
-    test_predictions = model.predict(validation_data)
-
-    train_accuracy = accuracy_score(train_labels_sh, train_predictions)
-    svm_train_accuracy = np.mean(cross_val_score(model, train_data_sh, train_labels_sh, cv=5))
-
-    test_accuracy = accuracy_score(validation_labels, test_predictions)
-
-    label_accuracy["text"] = f"Test Accuracy: %{test_accuracy*100:.2f}"
-    label_crossAccuracy["text"] = f"Cross Validation Accuracy: %{svm_train_accuracy*100:.2f}"
-    label_trainAccuracy["text"] = f"Train Accuracy: %{train_accuracy*100:.2f}"
-
-    #return train_accuracy, test_accuracy
-
+    # Print accuracies
+    print(f"SVM Cross-Validation Accuracy: {svm_train_accuracy*100:.2f}%")
+    print(f"RF Cross-Validation Accuracy: {rf_train_accuracy*100:.2f}%")
 
 # def calculate_accuracy():
 
-#     model = SVC(kernel="linear")
-#     model.fit(train_data, train_labels)
-#     validation_predictions = model.predict(validation_data)
-#     accuracy = accuracy_score(validation_labels, validation_predictions)
-#     label_accuracy["text"] = f"Accuracy: %{accuracy*100}"
+#     # Shuffle the training data and labels
+#     train_data_sh, train_labels_sh = shuffle(train_data, train_labels, random_state=42)
 
+#     # Train SVM model
+#     svm_model = SVC(kernel="linear", C=0.7)
+#     svm_model.fit(train_data_sh, train_labels_sh)
+
+#     # Train Random Forest model
+#     rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+#     rf_model.fit(train_data_sh, train_labels_sh)
+
+#     # Predictions on training data
+#     svm_train_predictions = svm_model.predict(train_data_sh)
+#     rf_train_predictions = rf_model.predict(train_data_sh)
+
+#     # Predictions on validation data
+#     svm_test_predictions = svm_model.predict(validation_data)
+#     rf_test_predictions = rf_model.predict(validation_data)
+
+#     # Calculate accuracies
+#     svm_train_accuracy = accuracy_score(train_labels_sh, svm_train_predictions)
+#     rf_train_accuracy = accuracy_score(train_labels_sh, rf_train_predictions)
+
+#     svm_test_accuracy = accuracy_score(validation_labels, svm_test_predictions)
+#     rf_test_accuracy = accuracy_score(validation_labels, rf_test_predictions)
+
+#     label_accuracy["text"] = f"SVM Train Accuracy: %{svm_train_accuracy*100}, \nSVM Test Accuracy: %{svm_test_accuracy*100}\nRF Train Accuracy: %{rf_train_accuracy*100}, \nRF Test Accuracy: %{rf_test_accuracy*100}"
+
+# def calculate_accuracy():
+
+#     train_data_sh, train_labels_sh = shuffle(train_data, train_labels, random_state=42)
+
+#     model = SVC(kernel="linear", C = 0.7)
+#     model.fit(train_data_sh, train_labels_sh)
+
+
+#     train_predictions = model.predict(train_data_sh)
+#     test_predictions = model.predict(validation_data)
+
+#     train_accuracy = accuracy_score(train_labels_sh, train_predictions)
+#     test_accuracy = accuracy_score(validation_labels, test_predictions)
+
+#     label_accuracy["text"] = f"Test Accuracy: %{test_accuracy*100} \nTrain Accuracy: %{train_accuracy*100}"
+
+#     #return train_accuracy, test_accuracy
 
 
 
@@ -115,10 +137,6 @@ def calculate_accuracy():
 
 ### test < train     Overfitting
 
-
-
-
-#Initialize empty lists for training and validation data
 
 
 
@@ -132,8 +150,8 @@ for category_folder in os.listdir("Product Classification"):
     category_label = int(category_folder)
 
     # Load train data
-    for img_path in os.listdir(os.path.join(category_path, "augmented_train")):
-        img_data = extract_features(os.path.join(category_path, "augmented_train", img_path))
+    for img_path in os.listdir(os.path.join(category_path, "Train")):
+        img_data = extract_features(os.path.join(category_path, "Train", img_path))
         train_data.append(img_data)
         train_labels.append(category_label)
 
@@ -173,7 +191,7 @@ root.resizable(width=False, height=False)
 
 root.title("Product Classification")
 # Provide the absolute path to your image file
-image_path = r"C:\Users\as721\Downloads\Computer-Vision-main\Computer-Vision-main\img2.jpeg"
+image_path = r"C:\Users\lenovo\Desktop\My-Github\Computer-Vision\img2.jpeg"
 photo = resize_image(image_path, width=750, height=650)
 
 
@@ -219,14 +237,6 @@ label_result.place(x=495,y=503)
 
 label_accuracy = tk.Label(root, text="",bg= "green", fg="white")
 label_accuracy.place(x=490,y=468)
-
-
-label_trainAccuracy = tk.Label(root, text="",bg= "green", fg="white")
-label_trainAccuracy.place(x=490,y=440)
-
-
-label_crossAccuracy = tk.Label(root, text="",bg= "green", fg="white")
-label_crossAccuracy.place(x=490,y=410)
 # #label_accuracy.pack()
 
 # Run the main loop
